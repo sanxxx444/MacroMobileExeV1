@@ -139,16 +139,52 @@ runService.Heartbeat:Connect(function()
     end
 end)
 
--- 😈 Defensa caótica si te agarran (evasión visual + saboteo enemigo)
+-- 😈 Defensa caótica + sabotaje si eres atrapado con telekinesis enemiga
 task.spawn(function()
     while true do
         local char = player.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         if char and root and root.Anchored then
-            root.CFrame *= CFrame.new(math.random(-0.5, 0.5), 0, math.random(-0.5, 0.5))
+            -- 💫 Movimiento errático: dificulta que te golpeen
+            root.CFrame *= CFrame.new(math.random(-1, 1), 0, math.random(-1, 1)) * CFrame.Angles(0, math.rad(math.random(-10, 10)), 0)
+
+            -- 🧨 Sabotaje cercano: fuerza bloqueo y anula ataque enemigo
             for _, model in ipairs(workspace:GetChildren()) do
                 if model:IsA("Model") and model ~= char and model:FindFirstChild("HumanoidRootPart") then
                     local dist = (model.HumanoidRootPart.Position - root.Position).Magnitude
                     if dist <= 12 then
                         if model:FindFirstChild("Blocking") then
-                            model.Blocking.Value
+                            model.Blocking.Value = true
+                        end
+                        if model:FindFirstChild("CantAttack") then
+                            model.CantAttack.Value = true
+                        end
+                    end
+                end
+            end
+
+            -- ⚠️ Auto-liberación si estás muy herido
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health <= 20 and root.Anchored then
+                root.Anchored = false
+                if releaseEvent then
+                    releaseEvent:FireServer(char)
+                end
+            end
+
+            -- ✨ Simulación de lag visual (puedes conectar esto con partículas)
+            local effects = char:FindFirstChild("ClientEffects")
+            if effects then
+                local fakeLag = Instance.new("Folder")
+                fakeLag.Name = "VisualLag"
+                fakeLag.Parent = effects
+                task.delay(0.3, function()
+                    if fakeLag and fakeLag.Parent then
+                        fakeLag:Destroy()
+                    end
+                end)
+            end
+        end
+        task.wait(0.1)
+    end
+end)

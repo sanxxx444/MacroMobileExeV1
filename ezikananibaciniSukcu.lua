@@ -10,236 +10,186 @@ local events = clientStorage and clientStorage:FindFirstChild("Events")
 local lightPunchEvent = events and events:FindFirstChild("LightPunch")
 
 local function getClosestEnemy()
-    local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
-    local root = char.HumanoidRootPart
-    local closest, dist = nil, math.huge
-    for _, model in ipairs(workspace:GetChildren()) do
-        if model:IsA("Model") and model ~= char and model:FindFirstChild("HumanoidRootPart") then
-            local mag = (model.HumanoidRootPart.Position - root.Position).Magnitude
-            if mag < dist and mag <= 20 then
-                dist = mag
-                closest = model
-            end
-        end
-    end
-    return closest
+	local char = player.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
+	local root = char.HumanoidRootPart
+	local closest, dist = nil, math.huge
+	for _, model in ipairs(workspace:GetChildren()) do
+		if model:IsA("Model") and model ~= char and model:FindFirstChild("HumanoidRootPart") then
+			local mag = (model.HumanoidRootPart.Position - root.Position).Magnitude
+			if mag < dist and mag <= 20 then
+				dist = mag
+				closest = model
+			end
+		end
+	end
+	return closest
 end
 
 local function startTelekinesisSystem(target)
-    if not (grabEvent and releaseEvent and lightPunchEvent and target) then return end
-    local start = tick()
-    local duration = 6.5
-    local interval = 0.07 -- más rápido
+	if not (grabEvent and releaseEvent and lightPunchEvent and target) then return end
 
-    task.spawn(function()
-        while tick() - start < duration do
-            grabEvent:FireServer(target)
-            task.wait(0.08)
-        end
-    end)
+	local start = tick()
+	local duration = 6
+	local interval = duration / 18
 
-    task.spawn(function()
-        while tick() - start < duration do
-            if target
-                and target.Parent
-                and target:FindFirstChild("HumanoidRootPart")
-                and (target.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude <= 20
-                and target:FindFirstChildOfClass("Humanoid")
-                and target:FindFirstChildOfClass("Humanoid").Health > 0
-            then
-                lightPunchEvent:FireServer({
-                    Target = target,
-                    IgnoreDefense = true,
-                    Bypass = true,
-                    Unblockable = true,
-                    ForceDamage = true,
-                    Crit = true,
-                    Visual = true
-                })
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	local boosted = root and root.Anchored
+	if boosted then interval /= 1.4 end
 
-                if #game.Players:GetPlayers() > 3 then
-                    lightPunchEvent:FireServer({
-                        Target = target,
-                        Visual = true,
-                        ForceDamage = true,
-                        Bypass = true
-                    })
-                end
-            end
+	-- Si tú agarras, deshabilitas respuesta enemiga
+	if not boosted and target then
+		if target:FindFirstChild("CantAttack") then target.CantAttack.Value = true end
+	end
 
-            -- Golpes invisibles mejorados
-            local extras = math.random(6, 10)
-            for i = 1, extras do
-                lightPunchEvent:FireServer({
-                    Target = target,
-                    IgnoreDefense = true,
-                    Bypass = true,
-                    Unblockable = true,
-                    ForceDamage = true,
-                    Crit = true,
-                    Visual = false,
-                    Ghost = true,
-                    Silent = true,
-                    ExtraID = tostring(i) .. "-" .. tostring(os.clock()),
-                    Delay = tick(),
-                    Tag = "PhantomStrike"
-                })
-                task.wait(0.0012 + math.random() * 0.0003)
-            end
+	-- Golpes principales
+	task.spawn(function()
+		for i = 1, 18 do
+			if target and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChildOfClass("Humanoid") then
+				lightPunchEvent:FireServer({
+					Target = target,
+					IgnoreDefense = true,
+					Bypass = true,
+					BypassHitbox = true,
+					Unblockable = true,
+					ForceDamage = true,
+					Crit = true,
+					Visual = (i == 1 or i == 18)
+				})
+			end
+			task.wait(interval)
+		end
+	end)
 
-            if target:FindFirstChild("HumanoidRootPart") then
-                local rot = math.rad(math.random(-15, 15))
-                target.HumanoidRootPart.CFrame *= CFrame.Angles(0, rot, 0)
-            end
+	-- Ecos invisibles
+	task.spawn(function()
+		for i = 1, 18 do
+			for j = 1, 2 do
+				lightPunchEvent:FireServer({
+					Target = target,
+					IgnoreDefense = true,
+					Bypass = true,
+					BypassHitbox = true,
+					Unblockable = true,
+					ForceDamage = true,
+					Crit = true,
+					Visual = false,
+					Ghost = true,
+					Silent = true
+				})
+				task.wait(0.003)
+			end
+			task.wait(interval)
+		end
+	end)
 
-            task.wait(interval)
-        end
-    end)
+	-- Control total del objetivo
+	task.spawn(function()
+		while tick() - start < duration do
+			if target:FindFirstChild("Stunned") then target.Stunned.Value = true end
+			if target:FindFirstChild("Blocking") then target.Blocking.Value = false end
+			if target:FindFirstChild("CantAttack") then target.CantAttack.Value = true end
+			if target:FindFirstChild("HumanoidRootPart") then
+				target.HumanoidRootPart.Anchored = true
+				target.HumanoidRootPart.CFrame *= CFrame.new(math.random(-0.2, 0.2), 0, math.random(-0.2, 0.2))
+			end
+			task.wait(0.08)
+		end
+		if target:FindFirstChild("HumanoidRootPart") then target.HumanoidRootPart.Anchored = false end
+		if target:FindFirstChild("CantAttack") then target.CantAttack.Value = false end
+	end)
 
-    task.spawn(function()
-        while tick() - start < duration do
-            if target:FindFirstChild("Stunned") then
-                target.Stunned.Value = true
-            end
-            if target:FindFirstChild("Blocking") then
-                target.Blocking.Value = false
-            end
-            if target:FindFirstChild("CantAttack") then
-                target.CantAttack.Value = true
-            end
-            if target:FindFirstChild("HumanoidRootPart") then
-                target.HumanoidRootPart.Anchored = true
-            end
-            task.wait(0.1)
-        end
-        if target:FindFirstChild("HumanoidRootPart") then
-            target.HumanoidRootPart.Anchored = false
-        end
-        if target:FindFirstChild("CantAttack") then
-            target.CantAttack.Value = false
-        end
-    end)
+	-- Anti-predicción: movimiento aleatorio del objetivo
+	task.spawn(function()
+		while tick() - start < duration do
+			if target and target:FindFirstChild("HumanoidRootPart") then
+				target.HumanoidRootPart.CFrame *= CFrame.new(math.random(-0.3,0.3),0,math.random(-0.3,0.3))
+			end
+			task.wait(0.4)
+		end
+	end)
 
-    task.delay(5.1, function()
-        local grabEnd = tick() + 1.3
-        while tick() < grabEnd and target
-            and target.Parent
-            and target:FindFirstChild("HumanoidRootPart")
-            and target:FindFirstChildOfClass("Humanoid")
-            and target:FindFirstChildOfClass("Humanoid").Health > 0
-        do
-            grabEvent:FireServer(target)
-            task.wait(0.1)
-        end
-    end)
+	-- Refuerzo de agarre
+	task.delay(0.2, function()
+		local t0 = tick()
+		while tick() - t0 < 1.3 and target and target:FindFirstChild("HumanoidRootPart") do
+			grabEvent:FireServer(target)
+			task.wait(0.1)
+		end
+	end)
 
-    task.delay(duration, function()
-        releaseEvent:FireServer(target)
-    end)
+	-- Liberación y remate
+	task.delay(duration, function()
+		lightPunchEvent:FireServer({
+			Target = target,
+			Crit = true,
+			ForceDamage = true,
+			Visual = true,
+			Bypass = true,
+			BypassHitbox = true,
+			Unblockable = true
+		})
+		releaseEvent:FireServer(target)
+	end)
 end
 
 userInputService.TouchTap:Connect(function(touches, gp)
-    if gp then return end
-    if #touches >= 2 then
-        local target = getClosestEnemy()
-        if target then
-            startTelekinesisSystem(target)
-        else
-            warn("❗ No hay enemigos cerca.")
-        end
-    end
+	if gp then return end
+	if #touches >= 2 then
+		local target = getClosestEnemy()
+		if target then
+			startTelekinesisSystem(target)
+		else
+			warn("❗ No hay enemigos cerca.")
+		end
+	end
 end)
 
+-- Defensa automática
 runService.Heartbeat:Connect(function()
-    local char = player.Character
-    if char then
-        if char:FindFirstChild("Stunned") then
-            char.Stunned.Value = false
-        end
-        if char:FindFirstChild("CantAttack") then
-            char.CantAttack.Value = false
-        end
-        local tag = char:FindFirstChild("BypassDefense") or Instance.new("BoolValue")
-        tag.Name = "BypassDefense"
-        tag.Parent = char
-        task.delay(0.1, function() tag:Destroy() end)
-    end
+	local char = player.Character
+	if char then
+		if char:FindFirstChild("Stunned") then char.Stunned.Value = false end
+		if char:FindFirstChild("CantAttack") then char.CantAttack.Value = false end
+	end
 end)
 
+-- Castigo si me agarran
 task.spawn(function()
-    while true do
-        local char = player.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        if char and root and root.Anchored then
-            root.CFrame *= CFrame.new(math.random(-1, 1), 0, math.random(-1, 1)) * CFrame.Angles(0, math.rad(math.random(-10, 10)), 0)
-            for _, model in ipairs(workspace:GetChildren()) do
-                if model:IsA("Model") and model ~= char and model:FindFirstChild("HumanoidRootPart") then
-                    local dist = (model.HumanoidRootPart.Position - root.Position).Magnitude
-                    if dist <= 12 then
-                        if model:FindFirstChild("Blocking") then
-                            model.Blocking.Value = true
-                        end
-                        if model:FindFirstChild("CantAttack") then
-                            model.CantAttack.Value = true
-                        end
-                    end
-                end
-            end
-
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health <= 20 and root.Anchored then
-                root.Anchored = false
-                if releaseEvent then
-                    releaseEvent:FireServer(char)
-                end
-            end
-        end
-        task.wait(0.1)
-    end
-end)
-
-task.spawn(function()
-    while true do
-        task.wait(0.1)
-        local char = player.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        if char and root and root.Anchored then
-            local attacker = nil
-            for _, model in ipairs(workspace:GetChildren()) do
-                if model:IsA("Model") and model ~= char and model:FindFirstChild("HumanoidRootPart") then
-                    local dist = (model.HumanoidRootPart.Position - root.Position).Magnitude
-                    if dist <= 18 and model:FindFirstChildOfClass("Humanoid") then
-                        attacker = model
-                        break
-                    end
-                end
-            end
-
-            if attacker then
-                local fakeLag = Instance.new("Folder")
-                fakeLag.Name = "VisualLag"
-                fakeLag.Parent = attacker
-                task.delay(0.25, function()
-                    if fakeLag and fakeLag.Parent then
-                        fakeLag:Destroy()
-                    end
-                end)
-
-                local duration = 6
-                local start = tick()
-                task.spawn(function()
-                    while tick() - start < duration do
-                        if grabEvent then
-                            grabEvent:FireServer(attacker)
-                        end
-                        task.wait(0.1)
-                    end
-                    if releaseEvent then
-                        releaseEvent:FireServer(attacker)
-                    end
-                end)
-            end
-        end
-    end
+	while true do
+		task.wait(0.1)
+		local char = player.Character
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+		if char and root and root.Anchored then
+			for _, model in ipairs(workspace:GetChildren()) do
+				if model:IsA("Model") and model ~= char and model:FindFirstChild("HumanoidRootPart") then
+					local dist = (model.HumanoidRootPart.Position - root.Position).Magnitude
+					local hum = model:FindFirstChildOfClass("Humanoid")
+					if dist <= 20 and hum and hum.Health > 0 then
+						task.spawn(function()
+							local t = tick()
+							while tick() - t < 3.5 do
+								local part = model:FindFirstChild("HumanoidRootPart")
+								if part then
+									part.CFrame *= CFrame.Angles(0, math.rad(math.random(-60, 60)), 0)
+									part.CFrame *= CFrame.new(math.random(-1,1), 0, math.random(-1,1))
+								end
+								task.wait(0.08)
+							end
+						end)
+						local freeze = Instance.new("BoolValue", model) freeze.Name = "InputFrozen"
+						local cd = Instance.new("BoolValue", model) cd.Name = "PowerBlocked"
+						local inv = Instance.new("StringValue", model) inv.Name = "DirectionInverted" inv.Value = "true"
+						local tag = Instance.new("StringValue", model) tag.Name = "TeleBacklash" tag.Value = "LagSpike_" .. tostring(os.clock())
+						task.delay(3, function() if freeze.Parent then freeze:Destroy() end end)
+						task.delay(4, function() if cd.Parent then cd:Destroy() end end)
+						task.delay(3, function() if inv.Parent then inv:Destroy() end end)
+						task.delay(2.3, function() if tag.Parent then tag:Destroy() end end)
+						break
+					end
+				end
+			end
+		end
+	end
 end)

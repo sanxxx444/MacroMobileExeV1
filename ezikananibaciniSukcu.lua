@@ -30,7 +30,7 @@ local function startTelekinesisSystem(target)
     if not (grabEvent and releaseEvent and lightPunchEvent and target) then return end
     local start = tick()
     local duration = 6.5
-    local interval = 0.18  -- ⚡ Más frecuencia de ataques
+    local interval = 0.18
 
     task.spawn(function()
         while tick() - start < duration do
@@ -41,7 +41,6 @@ local function startTelekinesisSystem(target)
 
     task.spawn(function()
         while tick() - start < duration do
-            -- 🥊 Golpe visible
             if target
                 and target.Parent
                 and target:FindFirstChild("HumanoidRootPart")
@@ -59,7 +58,6 @@ local function startTelekinesisSystem(target)
                 })
             end
 
-            -- 💨 2-3 extras invisibles con firma única y velocidad extrema
             local extras = math.random(2, 3)
             for i = 1, extras do
                 lightPunchEvent:FireServer({
@@ -105,7 +103,6 @@ local function startTelekinesisSystem(target)
         end
     end)
 
-    -- 🔒 Refuerzo post-5s para mantener el agarre completo
     task.delay(5.1, function()
         local grabEnd = tick() + 1.3
         while tick() < grabEnd and target
@@ -152,6 +149,7 @@ runService.Heartbeat:Connect(function()
     end
 end)
 
+-- Movimiento artificial mientras estás anclado
 task.spawn(function()
     while true do
         local char = player.Character
@@ -180,19 +178,53 @@ task.spawn(function()
                     releaseEvent:FireServer(char)
                 end
             end
+        end
+        task.wait(0.1)
+    end
+end)
 
-            local effects = char:FindFirstChild("ClientEffects")
-            if effects then
+-- Defensa automática al ser agarrado: contraagarre y lag al enemigo
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        local char = player.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if char and root and root.Anchored then
+            local attacker = nil
+            for _, model in ipairs(workspace:GetChildren()) do
+                if model:IsA("Model") and model ~= char and model:FindFirstChild("HumanoidRootPart") then
+                    local dist = (model.HumanoidRootPart.Position - root.Position).Magnitude
+                    if dist <= 18 and model:FindFirstChildOfClass("Humanoid") then
+                        attacker = model
+                        break
+                    end
+                end
+            end
+
+            if attacker then
                 local fakeLag = Instance.new("Folder")
                 fakeLag.Name = "VisualLag"
-                fakeLag.Parent = effects
-                task.delay(0.3, function()
+                fakeLag.Parent = attacker
+                task.delay(0.25, function()
                     if fakeLag and fakeLag.Parent then
                         fakeLag:Destroy()
                     end
                 end)
+
+                local duration = 6
+                local start = tick()
+                task.spawn(function()
+                    while tick() - start < duration do
+                        if grabEvent then
+                            grabEvent:FireServer(attacker)
+                        end
+                        task.wait(0.1)
+                    end
+                    if releaseEvent then
+                        releaseEvent:FireServer(attacker)
+                    end
+                end)
             end
         end
-        task.wait(0.1)
     end
 end)

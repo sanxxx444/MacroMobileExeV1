@@ -30,12 +30,12 @@ local function startTelekinesisSystem(target)
     if not (grabEvent and releaseEvent and lightPunchEvent and target) then return end
     local start = tick()
     local duration = 6.5
-    local interval = 0.18
+    local interval = 0.07 -- más rápido
 
     task.spawn(function()
         while tick() - start < duration do
             grabEvent:FireServer(target)
-            task.wait(0.1)
+            task.wait(0.08)
         end
     end)
 
@@ -54,11 +54,22 @@ local function startTelekinesisSystem(target)
                     Bypass = true,
                     Unblockable = true,
                     ForceDamage = true,
+                    Crit = true,
                     Visual = true
                 })
+
+                if #game.Players:GetPlayers() > 3 then
+                    lightPunchEvent:FireServer({
+                        Target = target,
+                        Visual = true,
+                        ForceDamage = true,
+                        Bypass = true
+                    })
+                end
             end
 
-            local extras = math.random(2, 3)
+            -- Golpes invisibles mejorados
+            local extras = math.random(6, 10)
             for i = 1, extras do
                 lightPunchEvent:FireServer({
                     Target = target,
@@ -66,13 +77,20 @@ local function startTelekinesisSystem(target)
                     Bypass = true,
                     Unblockable = true,
                     ForceDamage = true,
+                    Crit = true,
                     Visual = false,
                     Ghost = true,
                     Silent = true,
-                    ExtraID = tostring(math.random()),
-                    Delay = tick()
+                    ExtraID = tostring(i) .. "-" .. tostring(os.clock()),
+                    Delay = tick(),
+                    Tag = "PhantomStrike"
                 })
-                task.wait(0.004 + math.random() * 0.001)
+                task.wait(0.0012 + math.random() * 0.0003)
+            end
+
+            if target:FindFirstChild("HumanoidRootPart") then
+                local rot = math.rad(math.random(-15, 15))
+                target.HumanoidRootPart.CFrame *= CFrame.Angles(0, rot, 0)
             end
 
             task.wait(interval)
@@ -149,14 +167,12 @@ runService.Heartbeat:Connect(function()
     end
 end)
 
--- Movimiento artificial mientras estás anclado
 task.spawn(function()
     while true do
         local char = player.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         if char and root and root.Anchored then
             root.CFrame *= CFrame.new(math.random(-1, 1), 0, math.random(-1, 1)) * CFrame.Angles(0, math.rad(math.random(-10, 10)), 0)
-
             for _, model in ipairs(workspace:GetChildren()) do
                 if model:IsA("Model") and model ~= char and model:FindFirstChild("HumanoidRootPart") then
                     local dist = (model.HumanoidRootPart.Position - root.Position).Magnitude
@@ -183,7 +199,6 @@ task.spawn(function()
     end
 end)
 
--- Defensa automática al ser agarrado: contraagarre y lag al enemigo
 task.spawn(function()
     while true do
         task.wait(0.1)

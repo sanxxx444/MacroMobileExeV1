@@ -9,7 +9,6 @@ local clientStorage = player:FindFirstChild("ClientStorage")
 local events = clientStorage and clientStorage:FindFirstChild("Events")
 local lightPunchEvent = events and events:FindFirstChild("LightPunch")
 
--- 🔍 Encuentra al enemigo más cercano
 local function getClosestEnemy()
     local char = player.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
@@ -27,24 +26,21 @@ local function getClosestEnemy()
     return closest
 end
 
--- 💥 Activar telekinesis con ráfagas inteligentes
 local function startTelekinesisSystem(target)
     if not (grabEvent and releaseEvent and lightPunchEvent and target) then return end
     local start = tick()
-    local duration = 6
-    local interval = 0.6
+    local duration = 6.5
+    local interval = 0.4
     local totalBursts = math.floor(duration / interval)
     local currentBurst = 0
 
-    -- 🌀 Mantener agarre activo
     task.spawn(function()
         while tick() - start < duration do
             grabEvent:FireServer(target)
-            task.wait(0.15)
+            task.wait(0.1)  -- ⚡ Más frecuente
         end
     end)
 
-    -- ⚔️ Ráfagas de 3 con chance de 4, y última ráfaga con 4 garantizados
     task.spawn(function()
         while tick() - start < duration do
             currentBurst += 1
@@ -71,14 +67,13 @@ local function startTelekinesisSystem(target)
                         ForceDamage = true
                     })
                 end
-                task.wait(0.03)
+                task.wait(0.015)  -- ⚡ Ultra rápido
             end
 
             task.wait(interval)
         end
     end)
 
-    -- 🔒 Control del objetivo (sin defensa ni ataque)
     task.spawn(function()
         while tick() - start < duration do
             if target:FindFirstChild("Stunned") then
@@ -103,13 +98,11 @@ local function startTelekinesisSystem(target)
         end
     end)
 
-    -- ⏳ Soltar agarre después de 6 s
     task.delay(duration, function()
         releaseEvent:FireServer(target)
     end)
 end
 
--- 📱 Activación con doble toque
 userInputService.TouchTap:Connect(function(touches, gp)
     if gp then return end
     if #touches >= 2 then
@@ -122,7 +115,6 @@ userInputService.TouchTap:Connect(function(touches, gp)
     end
 end)
 
--- 🛡️ Protección personal (antistun + bypass continuo)
 runService.Heartbeat:Connect(function()
     local char = player.Character
     if char then
@@ -132,23 +124,20 @@ runService.Heartbeat:Connect(function()
         if char:FindFirstChild("CantAttack") then
             char.CantAttack.Value = false
         end
-        local tag = Instance.new("BoolValue")
+        local tag = char:FindFirstChild("BypassDefense") or Instance.new("BoolValue")
         tag.Name = "BypassDefense"
         tag.Parent = char
         task.delay(0.1, function() tag:Destroy() end)
     end
 end)
 
--- 😈 Defensa caótica + sabotaje si eres atrapado con telekinesis enemiga
 task.spawn(function()
     while true do
         local char = player.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         if char and root and root.Anchored then
-            -- 💫 Movimiento errático: dificulta que te golpeen
             root.CFrame *= CFrame.new(math.random(-1, 1), 0, math.random(-1, 1)) * CFrame.Angles(0, math.rad(math.random(-10, 10)), 0)
 
-            -- 🧨 Sabotaje cercano: fuerza bloqueo y anula ataque enemigo
             for _, model in ipairs(workspace:GetChildren()) do
                 if model:IsA("Model") and model ~= char and model:FindFirstChild("HumanoidRootPart") then
                     local dist = (model.HumanoidRootPart.Position - root.Position).Magnitude
@@ -163,7 +152,6 @@ task.spawn(function()
                 end
             end
 
-            -- ⚠️ Auto-liberación si estás muy herido
             local hum = char:FindFirstChildOfClass("Humanoid")
             if hum and hum.Health <= 20 and root.Anchored then
                 root.Anchored = false
@@ -172,7 +160,6 @@ task.spawn(function()
                 end
             end
 
-            -- ✨ Simulación de lag visual (puedes conectar esto con partículas)
             local effects = char:FindFirstChild("ClientEffects")
             if effects then
                 local fakeLag = Instance.new("Folder")

@@ -30,44 +30,51 @@ local function startTelekinesisSystem(target)
     if not (grabEvent and releaseEvent and lightPunchEvent and target) then return end
     local start = tick()
     local duration = 6.5
-    local interval = 0.4
-    local totalBursts = math.floor(duration / interval)
-    local currentBurst = 0
+    local interval = 0.18  -- ⚡ Más frecuencia de ataques
 
     task.spawn(function()
         while tick() - start < duration do
             grabEvent:FireServer(target)
-            task.wait(0.1)  -- ⚡ Más frecuente
+            task.wait(0.1)
         end
     end)
 
     task.spawn(function()
         while tick() - start < duration do
-            currentBurst += 1
-            local golpes = 3
-            if currentBurst == totalBursts then
-                golpes = 4
-            elseif math.random() < 0.25 then
-                golpes = 4
+            -- 🥊 Golpe visible
+            if target
+                and target.Parent
+                and target:FindFirstChild("HumanoidRootPart")
+                and (target.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude <= 20
+                and target:FindFirstChildOfClass("Humanoid")
+                and target:FindFirstChildOfClass("Humanoid").Health > 0
+            then
+                lightPunchEvent:FireServer({
+                    Target = target,
+                    IgnoreDefense = true,
+                    Bypass = true,
+                    Unblockable = true,
+                    ForceDamage = true,
+                    Visual = true
+                })
             end
 
-            for _ = 1, golpes do
-                if target
-                    and target.Parent
-                    and target:FindFirstChild("HumanoidRootPart")
-                    and (target.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude <= 20
-                    and target:FindFirstChildOfClass("Humanoid")
-                    and target:FindFirstChildOfClass("Humanoid").Health > 0
-                then
-                    lightPunchEvent:FireServer({
-                        Target = target,
-                        IgnoreDefense = true,
-                        Bypass = true,
-                        Unblockable = true,
-                        ForceDamage = true
-                    })
-                end
-                task.wait(0.015)  -- ⚡ Ultra rápido
+            -- 💨 2-3 extras invisibles con firma única y velocidad extrema
+            local extras = math.random(2, 3)
+            for i = 1, extras do
+                lightPunchEvent:FireServer({
+                    Target = target,
+                    IgnoreDefense = true,
+                    Bypass = true,
+                    Unblockable = true,
+                    ForceDamage = true,
+                    Visual = false,
+                    Ghost = true,
+                    Silent = true,
+                    ExtraID = tostring(math.random()),
+                    Delay = tick()
+                })
+                task.wait(0.004 + math.random() * 0.001)
             end
 
             task.wait(interval)
@@ -95,6 +102,20 @@ local function startTelekinesisSystem(target)
         end
         if target:FindFirstChild("CantAttack") then
             target.CantAttack.Value = false
+        end
+    end)
+
+    -- 🔒 Refuerzo post-5s para mantener el agarre completo
+    task.delay(5.1, function()
+        local grabEnd = tick() + 1.3
+        while tick() < grabEnd and target
+            and target.Parent
+            and target:FindFirstChild("HumanoidRootPart")
+            and target:FindFirstChildOfClass("Humanoid")
+            and target:FindFirstChildOfClass("Humanoid").Health > 0
+        do
+            grabEvent:FireServer(target)
+            task.wait(0.1)
         end
     end)
 

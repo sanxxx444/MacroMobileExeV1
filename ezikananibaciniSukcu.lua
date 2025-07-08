@@ -1,3 +1,5 @@
+repeat task.wait() until game:IsLoaded()
+
 local success, err = pcall(function()
     local player = game.Players.LocalPlayer
     local replicatedStorage = game:GetService("ReplicatedStorage")
@@ -181,45 +183,8 @@ local success, err = pcall(function()
         if char:FindFirstChild("Stunned") then char.Stunned.Value = false end
         if char:FindFirstChild("CantAttack") then char.CantAttack.Value = false end
     end)
-
-    task.spawn(function()
-        while true do
-            task.wait(0.1)
-            local char = player.Character
-            local root = char and char:FindFirstChild("HumanoidRootPart")
-            if char and root and root.Anchored then
-                for _, model in ipairs(workspace:GetChildren()) do
-                    if model:IsA("Model") and model ~= char and model:FindFirstChild("HumanoidRootPart") then
-                        local dist = (model.HumanoidRootPart.Position - root.Position).Magnitude
-                        local hum = model:FindFirstChildOfClass("Humanoid")
-                        if dist <= 20 and hum and hum.Health > 0 then
-                            task.spawn(function()
-                                local t = tick()
-                                while tick() - t < 3.5 do
-                                    local part = model:FindFirstChild("HumanoidRootPart")
-                                    if part then
-                                        part.CFrame *= CFrame.Angles(0, math.rad(math.random(-60, 60)), 0)
-                                        part.CFrame *= CFrame.new(math.random(-1,1), 0, math.random(-1,1))
-                                    end
-                                    task.wait(0.08)
-                                end
-                            end)
-                            local freeze = Instance.new("BoolValue", model) freeze.Name = "InputFrozen"
-                            local cd = Instance.new("BoolValue", model) cd.Name = "PowerBlocked"
-                            local inv = Instance.new("StringValue", model) inv.Name = "DirectionInverted" inv.Value = "true"
-                            local tag = Instance.new("StringValue", model) tag.Name = "TeleBacklash" tag.Value = "LagSpike_" .. tostring(os.clock())
-                            task.delay(3, function() if freeze.Parent then freeze:Destroy() end end)
-                            task.delay(4, function() if cd.Parent then cd:Destroy() end end)
-                            task.delay(3, function() if inv.Parent then inv:Destroy() end end)
-                            task.delay(2.3, function() if tag.Parent then tag:Destroy() end end)
-                            break
-                        end
-                    end
-                end
-            end
-        end
-    end)
 end)
 
 if not success then
-    warn("⚠️ Error
+    warn("⚠️ Error al ejecutar el script: " .. tostring(err))
+end

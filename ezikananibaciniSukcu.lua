@@ -27,6 +27,21 @@ local success, err = pcall(function()
         return closest
     end
 
+    local function DisplayDamage(target, damageValue)
+        local head = target:FindFirstChild("Head")
+        if not head then return end
+
+        local damageCounter = head:FindFirstChild("damageCounter")
+        if not damageCounter or not damageCounter:IsA("BillboardGui") then return end
+
+        local amount = damageCounter:FindFirstChild("amount")
+        if amount and amount:IsA("TextLabel") then
+            amount.Text = tostring(damageValue)
+        else
+            warn("❗ 'amount' no encontrado dentro de damageCounter")
+        end
+    end
+
     local function startTelekinesisSystem(target)
         if not (grabEvent and releaseEvent and lightPunchEvent and target) then return end
 
@@ -47,6 +62,9 @@ local success, err = pcall(function()
         task.spawn(function()
             for i = 1, 18 do
                 if target and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChildOfClass("Humanoid") then
+                    local crit = (i == 1 or i == 18)
+                    local dmg = math.random(80, 160)
+
                     lightPunchEvent:FireServer({
                         Target = target,
                         IgnoreDefense = true,
@@ -54,9 +72,11 @@ local success, err = pcall(function()
                         BypassHitbox = true,
                         Unblockable = true,
                         ForceDamage = true,
-                        Crit = true,
-                        Visual = (i == 1 or i == 18)
+                        Crit = crit,
+                        Visual = crit
                     })
+
+                    DisplayDamage(target, dmg)
                 end
                 task.wait(interval)
             end
@@ -149,8 +169,7 @@ local success, err = pcall(function()
     -- Defensa automática
     runService.Heartbeat:Connect(function()
         local char = player.Character
-        if char then
-            if char:FindFirstChild("Stunned") then char.Stunned.Value = false end
+        if char:FindFirstChild("Stunned") then char.Stunned.Value = false end
             if char:FindFirstChild("CantAttack") then char.CantAttack.Value = false end
         end
     end)

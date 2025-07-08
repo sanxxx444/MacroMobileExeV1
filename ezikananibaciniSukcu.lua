@@ -31,15 +31,31 @@ local success, err = pcall(function()
         local head = target:FindFirstChild("Head")
         if not head then return end
 
-        local damageCounter = head:FindFirstChild("damageCounter")
-        if not damageCounter or not damageCounter:IsA("BillboardGui") then return end
-
-        local amount = damageCounter:FindFirstChild("amount")
-        if amount and amount:IsA("TextLabel") then
-            amount.Text = tostring(damageValue)
-        else
-            warn("❗ 'amount' no encontrado dentro de damageCounter")
+        local gui = head:FindFirstChild("damageCounter")
+        if not gui then
+            gui = Instance.new("BillboardGui")
+            gui.Name = "damageCounter"
+            gui.Adornee = head
+            gui.Size = UDim2.new(0, 100, 0, 50)
+            gui.StudsOffset = Vector3.new(0, 2, 0)
+            gui.AlwaysOnTop = true
+            gui.Parent = head
         end
+
+        local label = gui:FindFirstChild("amount")
+        if not label then
+            label = Instance.new("TextLabel")
+            label.Name = "amount"
+            label.Size = UDim2.new(1, 0, 1, 0)
+            label.BackgroundTransparency = 1
+            label.TextColor3 = Color3.fromRGB(255, 0, 0)
+            label.TextScaled = true
+            label.Font = Enum.Font.GothamBold
+            label.TextStrokeTransparency = 0.5
+            label.Parent = gui
+        end
+
+        label.Text = tostring(damageValue)
     end
 
     local function startTelekinesisSystem(target)
@@ -58,7 +74,6 @@ local success, err = pcall(function()
             if target:FindFirstChild("CantAttack") then target.CantAttack.Value = true end
         end
 
-        -- Golpes principales
         task.spawn(function()
             for i = 1, 18 do
                 if target and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChildOfClass("Humanoid") then
@@ -82,7 +97,6 @@ local success, err = pcall(function()
             end
         end)
 
-        -- Ecos invisibles
         task.spawn(function()
             for i = 1, 18 do
                 for j = 1, 2 do
@@ -104,7 +118,6 @@ local success, err = pcall(function()
             end
         end)
 
-        -- Control total del objetivo
         task.spawn(function()
             while tick() - start < duration do
                 if target:FindFirstChild("Stunned") then target.Stunned.Value = true end
@@ -120,7 +133,6 @@ local success, err = pcall(function()
             if target:FindFirstChild("CantAttack") then target.CantAttack.Value = false end
         end)
 
-        -- Anti-predicción
         task.spawn(function()
             while tick() - start < duration do
                 if target and target:FindFirstChild("HumanoidRootPart") then
@@ -130,7 +142,6 @@ local success, err = pcall(function()
             end
         end)
 
-        -- Refuerzo de agarre
         task.delay(0.2, function()
             local t0 = tick()
             while tick() - t0 < 1.3 and target and target:FindFirstChild("HumanoidRootPart") do
@@ -139,7 +150,6 @@ local success, err = pcall(function()
             end
         end)
 
-        -- Remate
         task.delay(duration, function()
             lightPunchEvent:FireServer({
                 Target = target,
@@ -166,15 +176,12 @@ local success, err = pcall(function()
         end
     end)
 
-    -- Defensa automática
     runService.Heartbeat:Connect(function()
         local char = player.Character
         if char:FindFirstChild("Stunned") then char.Stunned.Value = false end
-            if char:FindFirstChild("CantAttack") then char.CantAttack.Value = false end
-        end
+        if char:FindFirstChild("CantAttack") then char.CantAttack.Value = false end
     end)
 
-    -- Castigo si me agarran
     task.spawn(function()
         while true do
             task.wait(0.1)
@@ -215,5 +222,4 @@ local success, err = pcall(function()
 end)
 
 if not success then
-    warn("⚠️ Error al ejecutar el script: " .. tostring(err))
-end
+    warn("⚠️ Error

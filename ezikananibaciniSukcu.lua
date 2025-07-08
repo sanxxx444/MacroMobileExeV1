@@ -1,5 +1,3 @@
-repeat task.wait() until game:IsLoaded()
-
 local success, err = pcall(function()
     local player = game.Players.LocalPlayer
     local replicatedStorage = game:GetService("ReplicatedStorage")

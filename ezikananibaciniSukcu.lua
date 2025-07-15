@@ -6,7 +6,7 @@ local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local root = char:WaitForChild("HumanoidRootPart")
 
-local intervalo = 0.03 -- ⏱️ Máxima velocidad permitida por el servidor
+local intervalo = 0.03 -- ⏱️ Frecuencia segura permitida
 local RemoteFire = ReplicatedStorage:FindFirstChild("LightPunchRemote") or ReplicatedStorage:FindFirstChild("LightPunch")
 
 RunService.RenderStepped:Connect(function()
@@ -27,11 +27,14 @@ RunService.RenderStepped:Connect(function()
 	end
 
 	if target then
-		task.spawn(function()
-			pcall(function()
-				RemoteFire:FireServer(target)
+		for i = 1, 3 do
+			task.spawn(function()
+				pcall(function()
+					RemoteFire:FireServer(target)
+				end)
 			end)
-		end)
+			task.wait(0.01) -- 🧨 Micro delay entre golpes
+		end
 	end
 
 	task.wait(intervalo)

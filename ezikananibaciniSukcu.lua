@@ -113,14 +113,14 @@ task.spawn(function()
 				end
 			end
 		end
-		task.wait(0.005)
+		task.wait(0.006)
 	end
 end)
 
 -- 🔒 Auto Punch — intacto, ejecuta golpes invisibles por ciclo
 task.spawn(function()
 	while true do
-		if not char or not root then wait(1) continue end
+		if not char or not root then wait(2) continue end
 		local punchRemote = ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events:FindFirstChild("Punch")
 		if punchRemote then
 			for _, obj in pairs(workspace:GetChildren()) do
@@ -132,7 +132,7 @@ task.spawn(function()
 						local extra = {["GhostID"] = tick()}
 						pcall(function()
 							punchRemote:FireServer(unpack(args))
-							wait(0.1)
+							wait(0.5)
 							punchRemote:FireServer(extra)
 						end)
 						break
@@ -140,7 +140,7 @@ task.spawn(function()
 				end
 			end
 		end
-		wait(3.2)
+		wait(3.5)
 	end
 end)
 

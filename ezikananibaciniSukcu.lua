@@ -51,7 +51,7 @@ task.spawn(function()
 	end
 end)
 
--- ⚔️ FastAttack — ráfagas agresivas cada 0.005 s
+-- ⚔️ FastAttack — agresivo con Anti Macro
 task.spawn(function()
 	local remote = ReplicatedStorage:FindFirstChild("LightPunchRemote") or ReplicatedStorage:FindFirstChild("LightPunch")
 	local cooldowns = {}
@@ -84,7 +84,7 @@ task.spawn(function()
 	end
 end)
 
--- ⚔️ LightPunch — paralelo, mismo ritmo y potencia
+-- ⚔️ LightPunch — paralelo con Anti Macro
 task.spawn(function()
 	local remote = ReplicatedStorage:FindFirstChild("LightPunchRemote") or ReplicatedStorage:FindFirstChild("LightPunch")
 	local cooldowns = {}
@@ -120,7 +120,7 @@ end)
 -- 🔒 Auto Punch — intacto, ejecuta golpes invisibles por ciclo
 task.spawn(function()
 	while true do
-		if not char or not root then wait(2) continue end
+		if not char or not root then wait(4) continue end
 		local punchRemote = ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events:FindFirstChild("Punch")
 		if punchRemote then
 			for _, obj in pairs(workspace:GetChildren()) do
@@ -132,7 +132,7 @@ task.spawn(function()
 						local extra = {["GhostID"] = tick()}
 						pcall(function()
 							punchRemote:FireServer(unpack(args))
-							wait(0.5)
+							wait(0.1)
 							punchRemote:FireServer(extra)
 						end)
 						break
@@ -140,7 +140,7 @@ task.spawn(function()
 				end
 			end
 		end
-		wait(3.5)
+		wait(3.2)
 	end
 end)
 

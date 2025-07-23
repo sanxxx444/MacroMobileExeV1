@@ -120,7 +120,7 @@ end)
 -- 🔒 Auto Punch — intacto, ejecuta golpes invisibles por ciclo
 task.spawn(function()
 	while true do
-		if not char or not root then wait(4) continue end
+		if not char or not root then wait(1) continue end
 		local punchRemote = ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events:FindFirstChild("Punch")
 		if punchRemote then
 			for _, obj in pairs(workspace:GetChildren()) do
@@ -128,11 +128,11 @@ task.spawn(function()
 				if obj:IsA("Model") and hrp and obj ~= char then
 					local dist = (hrp.Position - root.Position).Magnitude
 					if dist >= 1 and dist <= 10 then
-						local args = {0, 0.1, 1}
+						local args = {0, 0.2, 1}
 						local extra = {["GhostID"] = tick()}
 						pcall(function()
 							punchRemote:FireServer(unpack(args))
-							wait(0.1)
+							wait(0.4)
 							punchRemote:FireServer(extra)
 						end)
 						break
@@ -144,30 +144,40 @@ task.spawn(function()
 	end
 end)
 
--- 🧲 Ragdoll + bloqueo de respuesta al agarrar enemigo
+-- 🧲 Telekinesis reforzada — agarre real de 7s, fluido y sin lag
 task.spawn(function()
 	while true do
+		task.wait(0.05)
 		if char and root then
 			for _, obj in workspace:GetChildren() do
 				local hrp = obj:FindFirstChild("HumanoidRootPart")
 				local hum = obj:FindFirstChildOfClass("Humanoid")
 				if obj:IsA("Model") and hrp and hum and obj ~= char then
 					local dist = (hrp.Position - root.Position).Magnitude
-					local weld = hrp:FindFirstChild("WeldConstraint") or hrp:FindFirstChildWhichIsA("Weld")
+					local weld = hrp:FindFirstChildWhichIsA("Weld") or hrp:FindFirstChild("WeldConstraint")
 					if dist <= 5 and weld then
-						pcall(function()
-							hum:ChangeState(Enum.HumanoidStateType.Ragdoll)
-							hum:Move(Vector3.zero)
-							for _, track in hum:GetPlayingAnimationTracks() do
-								if track.Animation and string.find(track.Animation.Name, "Punch") then
-									track:Stop(0.01)
+						local start = tick()
+						while tick() - start < 7 and weld.Parent == hrp and hum.Health > 0 do
+							pcall(function()
+								hum:ChangeState(Enum.HumanoidStateType.Ragdoll)
+								hum:Move(Vector3.zero)
+								hum.PlatformStand = true
+								for _, track in hum:GetPlayingAnimationTracks() do
+									if track.Animation and string.find(track.Animation.Name, "Punch") then
+										track:AdjustSpeed(0.01)
+										track:Stop(0.05)
+									end
 								end
-							end
+							end)
+							task.wait(0.05)
+						end
+						pcall(function()
+							hum.PlatformStand = false
+							hum:ChangeState(Enum.HumanoidStateType.GettingUp)
 						end)
 					end
 				end
 			end
 		end
-		task.wait(0.1)
 	end
 end)

@@ -1,3 +1,5 @@
+--⚔️ MacroMobile Lag-Free Edition – Samsung A32 Optimized
+
 -- 🔗 Servicios base
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -47,11 +49,11 @@ task.spawn(function()
 				end
 			end
 		end
-		task.wait(0.004)
+		task.wait(0.01)
 	end
 end)
 
--- ⚔️ FastAttack — agresivo con Anti Macro
+-- ⚔️ FastAttack + LightPunch — combinados con Anti Macro
 task.spawn(function()
 	local remote = ReplicatedStorage:FindFirstChild("LightPunchRemote") or ReplicatedStorage:FindFirstChild("LightPunch")
 	local cooldowns = {}
@@ -62,10 +64,10 @@ task.spawn(function()
 				local h = obj:FindFirstChildOfClass("Humanoid")
 				if hrp and h and h.Health > 0 and obj ~= char then
 					local now = tick()
-					if not cooldowns[obj] or now - cooldowns[obj] >= 0.06 then
+					if not cooldowns[obj] or now - cooldowns[obj] >= 0.08 then
 						cooldowns[obj] = now
-						local ghost = now + math.random() * 0.003
-						task.defer(function()
+						local ghost = now + math.random() * 0.002
+					 task.defer(function()
 							pcall(function()
 								remote:FireServer({
 									0, 0.1, 1,
@@ -80,47 +82,14 @@ task.spawn(function()
 				end
 			end
 		end
-		task.wait(0.005)
+		task.wait(0.008)
 	end
 end)
 
--- ⚔️ LightPunch — paralelo con Anti Macro
-task.spawn(function()
-	local remote = ReplicatedStorage:FindFirstChild("LightPunchRemote") or ReplicatedStorage:FindFirstChild("LightPunch")
-	local cooldowns = {}
-	while true do
-		if remote and root then
-			for _, obj in workspace:GetChildren() do
-				local hrp = obj:FindFirstChild("HumanoidRootPart")
-				local h = obj:FindFirstChildOfClass("Humanoid")
-				if hrp and h and h.Health > 0 and obj ~= char then
-					local now = tick()
-					if not cooldowns[obj] or now - cooldowns[obj] >= 0.06 then
-						cooldowns[obj] = now
-						local ghost = now + math.random() * 0.003
-						task.defer(function()
-							pcall(function()
-								remote:FireServer({
-									0, 0.1, 1,
-									GhostID = ghost,
-									Target = hrp,
-									Strength = 3,
-									Impact = 3
-								})
-							end)
-						end)
-					end
-				end
-			end
-		end
-		task.wait(0.006)
-	end
-end)
-
--- 🔒 Auto Punch — intacto, ejecuta golpes invisibles por ciclo
+-- 🔒 Auto Punch — ejecuta golpes invisibles por ciclo
 task.spawn(function()
 	while true do
-		if not char or not root then wait(1) continue end
+		if not char or not root then task.wait(1) continue end
 		local punchRemote = ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events:FindFirstChild("Punch")
 		if punchRemote then
 			for _, obj in pairs(workspace:GetChildren()) do
@@ -129,10 +98,10 @@ task.spawn(function()
 					local dist = (hrp.Position - root.Position).Magnitude
 					if dist >= 1 and dist <= 10 then
 						local args = {0, 0.2, 1}
-						local extra = {["GhostID"] = tick()}
+					 local extra = {["GhostID"] = tick()}
 						pcall(function()
 							punchRemote:FireServer(unpack(args))
-							wait(0.4)
+						 task.wait(0.4)
 							punchRemote:FireServer(extra)
 						end)
 						break
@@ -140,7 +109,7 @@ task.spawn(function()
 				end
 			end
 		end
-		wait(3.2)
+		task.wait(3)
 	end
 end)
 
